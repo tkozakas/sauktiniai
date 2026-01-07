@@ -28,6 +28,8 @@ services:
     environment:
       - PORT=8080
       - CORS_ORIGINS=http://localhost:3001
+    volumes:
+      - ./backend/data:/app/data:ro
 
   backend-prod:
     <<: *backend
@@ -36,6 +38,8 @@ services:
     environment:
       - PORT=8080
       - CORS_ORIGINS=http://caddy
+    volumes:
+      - ./data:/app/data:ro
 
   frontend:
     <<: *frontend
