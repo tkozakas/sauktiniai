@@ -2,12 +2,12 @@ package karys
 
 type Person struct {
 	Pos        string `json:"pos"`
-	Number     string `json:"number"`
+	Number     string `json:"-"`
 	Name       string `json:"name"`
 	Lastname   string `json:"lastname"`
 	Bdate      string `json:"bdate"`
-	Department string `json:"department"`
-	Info       string `json:"info"`
+	Department string `json:"-"`
+	Info       string `json:"-"`
 }
 
 type Region struct {
