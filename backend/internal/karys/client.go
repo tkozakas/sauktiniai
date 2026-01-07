@@ -11,21 +11,15 @@ import (
 )
 
 type Client struct {
-	http *http.Client
+	http  *http.Client
+	cache map[int][]Person
+	mu    sync.RWMutex
 }
 
 func NewClient() *Client {
-	return &Client{http: &http.Client{Timeout: 30 * time.Second}}
-}
-
-func (c *Client) Regions() []Region {
-	return []Region{
-		{1, "Alytaus RKC"},
-		{2, "Kauno RKC"},
-		{3, "Klaipėdos RKC"},
-		{4, "Panevėžio RKC"},
-		{5, "Šiaulių RKC"},
-		{6, "Vilniaus RKC"},
+	return &Client{
+		http:  &http.Client{Timeout: 30 * time.Second},
+		cache: make(map[int][]Person),
 	}
 }
 
@@ -49,15 +43,30 @@ func (c *Client) Fetch(region, start, end int) ([]Person, error) {
 	return persons, nil
 }
 
-func (c *Client) FetchAll(region, max int) []Person {
+func (c *Client) FetchAll(region int) []Person {
+	c.mu.RLock()
+	if cached, ok := c.cache[region]; ok {
+		c.mu.RUnlock()
+		return cached
+	}
+	c.mu.RUnlock()
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if cached, ok := c.cache[region]; ok {
+		return cached
+	}
+
+	var all []Person
 	batch := 500
-	batches := (max + batch - 1) / batch
+	max := 60000
 
 	var wg sync.WaitGroup
-	results := make(chan []Person, batches)
+	results := make(chan []Person, max/batch)
 	sem := make(chan struct{}, 10)
 
-	for i := 0; i < batches; i++ {
+	for i := 0; i < max/batch; i++ {
 		wg.Add(1)
 		go func(idx int) {
 			defer wg.Done()
@@ -66,10 +75,7 @@ func (c *Client) FetchAll(region, max int) []Person {
 
 			start := idx * batch
 			end := start + batch - 1
-			if end >= max {
-				end = max - 1
-			}
-			if p, err := c.Fetch(region, start, end); err == nil {
+			if p, err := c.Fetch(region, start, end); err == nil && len(p) > 0 {
 				results <- p
 			}
 		}(i)
@@ -80,15 +86,16 @@ func (c *Client) FetchAll(region, max int) []Person {
 		close(results)
 	}()
 
-	var all []Person
 	for p := range results {
 		all = append(all, p...)
 	}
+
+	c.cache[region] = all
 	return all
 }
 
-func (c *Client) Search(region int, query string, max int) []Person {
-	all := c.FetchAll(region, max)
+func (c *Client) Search(region int, query string) []Person {
+	all := c.FetchAll(region)
 	query = strings.ToLower(query)
 
 	var matched []Person
@@ -101,4 +108,17 @@ func (c *Client) Search(region int, query string, max int) []Person {
 		}
 	}
 	return matched
+}
+
+func (c *Client) GetCached(region int) []Person {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return c.cache[region]
+}
+
+func (c *Client) IsCached(region int) bool {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	_, ok := c.cache[region]
+	return ok
 }

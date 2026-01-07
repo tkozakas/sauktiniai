@@ -36,7 +36,21 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 		limit = 100
 	}
 
-	persons, _ := h.client.Fetch(region, start, start+limit-1)
+	var persons []karys.Person
+
+	if h.client.IsCached(region) {
+		all := h.client.GetCached(region)
+		end := start + limit
+		if end > len(all) {
+			end = len(all)
+		}
+		if start < len(all) {
+			persons = all[start:end]
+		}
+	} else {
+		persons, _ = h.client.Fetch(region, start, start+limit-1)
+	}
+
 	json.NewEncoder(w).Encode(map[string]any{
 		"region":  region,
 		"start":   start,
@@ -57,7 +71,7 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 		region = 6
 	}
 
-	persons := h.client.Search(region, query, 50000)
+	persons := h.client.Search(region, query)
 	json.NewEncoder(w).Encode(map[string]any{
 		"query":   query,
 		"region":  region,
