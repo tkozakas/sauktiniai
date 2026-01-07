@@ -1,0 +1,85 @@
+x-backend: &backend
+  expose:
+    - "8080"
+  environment:
+    - CORS_ORIGINS=${CORS_ORIGINS:-https://sauktiniai.lt}
+    - PORT=8080
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/health"]
+    interval: 5s
+    timeout: 3s
+    retries: 3
+    start_period: 5s
+
+x-frontend: &frontend
+  expose:
+    - "3000"
+  restart: unless-stopped
+
+services:
+  backend:
+    <<: *backend
+    profiles: ["dev"]
+    ports:
+      - "8081:8080"
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3001}
+      - PORT=8080
+
+  backend-prod:
+    <<: *backend
+    profiles: ["prod"]
+    image: ghcr.io/tkozakas/sauktiniai-backend:main
+
+  frontend:
+    <<: *frontend
+    profiles: ["dev"]
+    ports:
+      - "3001:3000"
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8081}
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  frontend-prod:
+    <<: *frontend
+    profiles: ["prod"]
+    image: ghcr.io/tkozakas/sauktiniai-frontend:main
+    depends_on:
+      backend-prod:
+        condition: service_healthy
+
+  tunnel:
+    profiles: ["prod"]
+    image: cloudflare/cloudflared:latest
+    command: tunnel run
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    restart: unless-stopped
+    depends_on:
+      - caddy
+
+  caddy:
+    profiles: ["prod"]
+    image: caddy:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - frontend-prod
+      - backend-prod
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
