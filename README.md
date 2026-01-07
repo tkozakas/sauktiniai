@@ -8,6 +8,5 @@ Live at [nenoriu.fun](https://nenoriu.fun)
 
 ```bash
 go run scripts/fetch.go
-mv data backend/data
 docker compose --profile dev up --build
 ```

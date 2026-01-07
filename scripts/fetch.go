@@ -81,7 +81,7 @@ func fetchAll(region int) []Person {
 }
 
 func main() {
-	os.MkdirAll("data", 0755)
+	os.MkdirAll("backend/data", 0755)
 
 	for region := 1; region <= 6; region++ {
 		fmt.Printf("Fetching region %d...\n", region)
@@ -89,7 +89,7 @@ func main() {
 		fmt.Printf("Region %d: %d records\n", region, len(persons))
 
 		data, _ := json.Marshal(persons)
-		os.WriteFile(fmt.Sprintf("data/region_%d.json", region), data, 0644)
+		os.WriteFile(fmt.Sprintf("backend/data/region_%d.json", region), data, 0644)
 	}
 
 	fmt.Println("Done!")
