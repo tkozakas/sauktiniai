@@ -2,7 +2,6 @@ x-backend: &backend
   expose:
     - "8080"
   environment:
-    - CORS_ORIGINS=${CORS_ORIGINS:-https://sauktiniai.lt}
     - PORT=8080
   restart: unless-stopped
   healthcheck:
@@ -27,13 +26,16 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     environment:
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3001}
       - PORT=8080
+      - CORS_ORIGINS=http://localhost:3001
 
   backend-prod:
     <<: *backend
     profiles: ["prod"]
     image: ghcr.io/tkozakas/sauktiniai-backend:main
+    environment:
+      - PORT=8080
+      - CORS_ORIGINS=http://caddy
 
   frontend:
     <<: *frontend
@@ -44,7 +46,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8081}
+        - NEXT_PUBLIC_API_URL=http://localhost:8081
     depends_on:
       backend:
         condition: service_healthy
@@ -70,16 +72,9 @@ services:
   caddy:
     profiles: ["prod"]
     image: caddy:alpine
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
     depends_on:
       - frontend-prod
       - backend-prod
     restart: unless-stopped
-
-volumes:
-  caddy_data:
