@@ -1,6 +1,8 @@
 # Šauktiniai
 
-Vibe coded this thing to not enter asmens kodas.
+Wrote this to not enter asmens kodas.
+
+Live at [nenoriu.fun](https://nenoriu.fun)
 
 ## Run locally
 
