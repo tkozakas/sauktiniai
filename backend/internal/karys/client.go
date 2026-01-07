@@ -10,16 +10,23 @@ import (
 	"time"
 )
 
+type cacheEntry struct {
+	data      []Person
+	timestamp time.Time
+}
+
 type Client struct {
 	http  *http.Client
-	cache map[int][]Person
+	cache map[int]cacheEntry
 	mu    sync.RWMutex
+	ttl   time.Duration
 }
 
 func NewClient() *Client {
 	return &Client{
 		http:  &http.Client{Timeout: 30 * time.Second},
-		cache: make(map[int][]Person),
+		cache: make(map[int]cacheEntry),
+		ttl:   1 * time.Hour,
 	}
 }
 
@@ -45,17 +52,17 @@ func (c *Client) Fetch(region, start, end int) ([]Person, error) {
 
 func (c *Client) FetchAll(region int) []Person {
 	c.mu.RLock()
-	if cached, ok := c.cache[region]; ok {
+	if cached, ok := c.cache[region]; ok && time.Since(cached.timestamp) < c.ttl {
 		c.mu.RUnlock()
-		return cached
+		return cached.data
 	}
 	c.mu.RUnlock()
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if cached, ok := c.cache[region]; ok {
-		return cached
+	if cached, ok := c.cache[region]; ok && time.Since(cached.timestamp) < c.ttl {
+		return cached.data
 	}
 
 	var all []Person
@@ -90,7 +97,7 @@ func (c *Client) FetchAll(region int) []Person {
 		all = append(all, p...)
 	}
 
-	c.cache[region] = all
+	c.cache[region] = cacheEntry{data: all, timestamp: time.Now()}
 	return all
 }
 
@@ -113,12 +120,15 @@ func (c *Client) Search(region int, query string) []Person {
 func (c *Client) GetCached(region int) []Person {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	return c.cache[region]
+	if cached, ok := c.cache[region]; ok && time.Since(cached.timestamp) < c.ttl {
+		return cached.data
+	}
+	return nil
 }
 
 func (c *Client) IsCached(region int) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	_, ok := c.cache[region]
-	return ok
+	cached, ok := c.cache[region]
+	return ok && time.Since(cached.timestamp) < c.ttl
 }
