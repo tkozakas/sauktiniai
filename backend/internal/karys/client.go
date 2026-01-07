@@ -19,15 +19,23 @@ type Client struct {
 	http  *http.Client
 	cache map[int]cacheEntry
 	mu    sync.RWMutex
-	ttl   time.Duration
 }
 
 func NewClient() *Client {
 	return &Client{
 		http:  &http.Client{Timeout: 30 * time.Second},
 		cache: make(map[int]cacheEntry),
-		ttl:   1 * time.Hour,
 	}
+}
+
+func (c *Client) isStale(timestamp time.Time) bool {
+	now := time.Now()
+	lastFriday := now
+	for lastFriday.Weekday() != time.Friday {
+		lastFriday = lastFriday.AddDate(0, 0, -1)
+	}
+	lastFriday = time.Date(lastFriday.Year(), lastFriday.Month(), lastFriday.Day(), 6, 0, 0, 0, lastFriday.Location())
+	return timestamp.Before(lastFriday)
 }
 
 func (c *Client) Fetch(region, start, end int) ([]Person, error) {
@@ -52,7 +60,7 @@ func (c *Client) Fetch(region, start, end int) ([]Person, error) {
 
 func (c *Client) FetchAll(region int) []Person {
 	c.mu.RLock()
-	if cached, ok := c.cache[region]; ok && time.Since(cached.timestamp) < c.ttl {
+	if cached, ok := c.cache[region]; ok && !c.isStale(cached.timestamp) {
 		c.mu.RUnlock()
 		return cached.data
 	}
@@ -61,7 +69,7 @@ func (c *Client) FetchAll(region int) []Person {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if cached, ok := c.cache[region]; ok && time.Since(cached.timestamp) < c.ttl {
+	if cached, ok := c.cache[region]; ok && !c.isStale(cached.timestamp) {
 		return cached.data
 	}
 
@@ -120,7 +128,7 @@ func (c *Client) Search(region int, query string) []Person {
 func (c *Client) GetCached(region int) []Person {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	if cached, ok := c.cache[region]; ok && time.Since(cached.timestamp) < c.ttl {
+	if cached, ok := c.cache[region]; ok && !c.isStale(cached.timestamp) {
 		return cached.data
 	}
 	return nil
@@ -130,5 +138,5 @@ func (c *Client) IsCached(region int) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	cached, ok := c.cache[region]
-	return ok && time.Since(cached.timestamp) < c.ttl
+	return ok && !c.isStale(cached.timestamp)
 }
