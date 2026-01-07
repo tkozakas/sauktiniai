@@ -98,7 +98,12 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto max-w-3xl px-4 py-12">
-        <h1 className="text-center text-4xl font-black tracking-tight">ŠAUKTINIAI</h1>
+        <h1
+          onClick={reset}
+          className="cursor-pointer text-center text-4xl font-black tracking-tight hover:opacity-80 transition"
+        >
+          ŠAUKTINIAI
+        </h1>
 
         <div className="mt-8 flex flex-wrap justify-center gap-2">
           {REGIONS.map(r => (
