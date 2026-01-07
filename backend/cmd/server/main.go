@@ -23,6 +23,7 @@ func main() {
 
 	r.Get("/api/list", handler.GetList)
 	r.Get("/api/search", handler.Search)
+	r.Get("/api/updated", handler.GetLastUpdated)
 	r.Get("/health", handler.Health)
 
 	port := os.Getenv("PORT")

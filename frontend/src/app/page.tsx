@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { getList, search } from "@/lib/api";
+import { getList, search, getLastUpdated } from "@/lib/api";
 import type { Person } from "@/lib/types";
 
 const REGIONS = [
@@ -16,8 +16,6 @@ const REGIONS = [
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 30 }, (_, i) => currentYear - 18 - i);
 
-const LAST_UPDATED = "2026-01-07";
-
 export default function Home() {
   const [region, setRegion] = useState(6);
   const [persons, setPersons] = useState<Person[]>([]);
@@ -26,6 +24,11 @@ export default function Home() {
   const [page, setPage] = useState(0);
   const [isSearch, setIsSearch] = useState(false);
   const [yearFilter, setYearFilter] = useState("");
+  const [lastUpdated, setLastUpdated] = useState("");
+
+  useEffect(() => {
+    getLastUpdated().then(setLastUpdated);
+  }, []);
 
   const load = async (r: number, p: number) => {
     setLoading(true);
@@ -86,9 +89,11 @@ export default function Home() {
         >
           ŠAUKTINIAI
         </h1>
-        <p className="mt-2 text-center text-xs text-zinc-600">
-          Atnaujinta: {LAST_UPDATED}
-        </p>
+        {lastUpdated && (
+          <p className="mt-2 text-center text-xs text-zinc-600">
+            Atnaujinta: {lastUpdated}
+          </p>
+        )}
 
         <div className="mt-8 flex flex-wrap justify-center gap-2">
           {REGIONS.map(r => (

@@ -3,7 +3,9 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"sauktiniai/backend/internal/karys"
 )
@@ -18,6 +20,15 @@ func NewHandler(client *karys.Client) *Handler {
 
 func (h *Handler) Health(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("ok"))
+}
+
+func (h *Handler) GetLastUpdated(w http.ResponseWriter, _ *http.Request) {
+	data, err := os.ReadFile("data/last_updated.txt")
+	if err != nil {
+		w.Write([]byte("unknown"))
+		return
+	}
+	w.Write([]byte(strings.TrimSpace(string(data))))
 }
 
 func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {

@@ -13,3 +13,9 @@ export const search = async (q: string, region = 6): Promise<SearchResponse> => 
   if (!res.ok) throw new Error("Failed to search");
   return res.json();
 };
+
+export const getLastUpdated = async (): Promise<string> => {
+  const res = await fetch(`${API}/api/updated`);
+  if (!res.ok) return "unknown";
+  return res.text();
+};
