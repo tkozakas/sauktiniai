@@ -142,12 +142,10 @@ export default function Home() {
 
             <div className="mt-2 divide-y divide-zinc-900">
               {filtered.map((p, i) => (
-                <div key={`${p.number}-${i}`} className="flex items-center py-3">
-                  <span className="w-8 text-sm text-zinc-600">{p.pos}</span>
-                  <div>
-                    <span className="font-medium">{p.name} {p.lastname}</span>
-                    <span className="ml-2 text-sm text-zinc-600">{p.bdate}</span>
-                  </div>
+                <div key={`${p.pos}-${i}`} className="flex items-center py-3">
+                  <span className="w-12 text-sm text-zinc-600">{p.pos}</span>
+                  <span className="font-medium">{p.name} {p.lastname}</span>
+                  <span className="ml-3 text-sm text-zinc-600">{p.bdate}</span>
                 </div>
               ))}
               {filtered.length === 0 && (
