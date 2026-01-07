@@ -5,37 +5,38 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
 )
 
-type cacheEntry struct {
-	data      []Person
-	timestamp time.Time
-}
-
 type Client struct {
 	http  *http.Client
-	cache map[int]cacheEntry
+	cache map[int][]Person
 	mu    sync.RWMutex
 }
 
 func NewClient() *Client {
-	return &Client{
+	c := &Client{
 		http:  &http.Client{Timeout: 30 * time.Second},
-		cache: make(map[int]cacheEntry),
+		cache: make(map[int][]Person),
 	}
+	c.loadFromDisk()
+	return c
 }
 
-func (c *Client) isStale(timestamp time.Time) bool {
-	now := time.Now()
-	lastFriday := now
-	for lastFriday.Weekday() != time.Friday {
-		lastFriday = lastFriday.AddDate(0, 0, -1)
+func (c *Client) loadFromDisk() {
+	for region := 1; region <= 6; region++ {
+		data, err := os.ReadFile(fmt.Sprintf("data/region_%d.json", region))
+		if err != nil {
+			continue
+		}
+		var persons []Person
+		if json.Unmarshal(data, &persons) == nil {
+			c.cache[region] = persons
+		}
 	}
-	lastFriday = time.Date(lastFriday.Year(), lastFriday.Month(), lastFriday.Day(), 6, 0, 0, 0, lastFriday.Location())
-	return timestamp.Before(lastFriday)
 }
 
 func (c *Client) Fetch(region, start, end int) ([]Person, error) {
@@ -60,17 +61,17 @@ func (c *Client) Fetch(region, start, end int) ([]Person, error) {
 
 func (c *Client) FetchAll(region int) []Person {
 	c.mu.RLock()
-	if cached, ok := c.cache[region]; ok && !c.isStale(cached.timestamp) {
+	if cached, ok := c.cache[region]; ok {
 		c.mu.RUnlock()
-		return cached.data
+		return cached
 	}
 	c.mu.RUnlock()
 
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	if cached, ok := c.cache[region]; ok && !c.isStale(cached.timestamp) {
-		return cached.data
+	if cached, ok := c.cache[region]; ok {
+		return cached
 	}
 
 	var all []Person
@@ -105,7 +106,7 @@ func (c *Client) FetchAll(region int) []Person {
 		all = append(all, p...)
 	}
 
-	c.cache[region] = cacheEntry{data: all, timestamp: time.Now()}
+	c.cache[region] = all
 	return all
 }
 
@@ -128,15 +129,12 @@ func (c *Client) Search(region int, query string) []Person {
 func (c *Client) GetCached(region int) []Person {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	if cached, ok := c.cache[region]; ok && !c.isStale(cached.timestamp) {
-		return cached.data
-	}
-	return nil
+	return c.cache[region]
 }
 
 func (c *Client) IsCached(region int) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	cached, ok := c.cache[region]
-	return ok && !c.isStale(cached.timestamp)
+	_, ok := c.cache[region]
+	return ok
 }
