@@ -16,6 +16,8 @@ const REGIONS = [
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 30 }, (_, i) => currentYear - 18 - i);
 
+const LAST_UPDATED = "2026-01-07";
+
 export default function Home() {
   const [region, setRegion] = useState(6);
   const [persons, setPersons] = useState<Person[]>([]);
@@ -84,6 +86,9 @@ export default function Home() {
         >
           ŠAUKTINIAI
         </h1>
+        <p className="mt-2 text-center text-xs text-zinc-600">
+          Atnaujinta: {LAST_UPDATED}
+        </p>
 
         <div className="mt-8 flex flex-wrap justify-center gap-2">
           {REGIONS.map(r => (
