@@ -13,23 +13,6 @@ const REGIONS = [
   { id: 6, name: "Vilnius" },
 ];
 
-const STATUSES = [
-  { value: "", label: "Visi" },
-  { value: "atidėta", label: "Atidėta" },
-  { value: "atlieka", label: "Atlieka tarnybą" },
-  { value: "susisiekti", label: "Reikia susisiekti" },
-  { value: "atliko", label: "Atliko tarnybą" },
-];
-
-const statusStyle = (info: string) => {
-  const l = info.toLowerCase();
-  if (l.includes("atidėta")) return "text-yellow-500";
-  if (l.includes("atlieka tarnybą")) return "text-green-500";
-  if (l.includes("susisiekti") || l.includes("atvykti")) return "text-red-500";
-  if (l.includes("atliko")) return "text-blue-500";
-  return "text-zinc-500";
-};
-
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 30 }, (_, i) => currentYear - 18 - i);
 
@@ -41,7 +24,6 @@ export default function Home() {
   const [page, setPage] = useState(0);
   const [isSearch, setIsSearch] = useState(false);
   const [yearFilter, setYearFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
 
   const load = async (r: number, p: number) => {
     setLoading(true);
@@ -82,17 +64,15 @@ export default function Home() {
   const filtered = useMemo(() => {
     return persons.filter(p => {
       if (yearFilter && p.bdate !== yearFilter) return false;
-      if (statusFilter && !p.info.toLowerCase().includes(statusFilter)) return false;
       return true;
     });
-  }, [persons, yearFilter, statusFilter]);
+  }, [persons, yearFilter]);
 
   const reset = () => {
     setPage(0);
     setQuery("");
     setIsSearch(false);
     setYearFilter("");
-    setStatusFilter("");
   };
 
   return (
@@ -140,18 +120,9 @@ export default function Home() {
               <option key={y} value={y}>{y}</option>
             ))}
           </select>
-          <select
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-            className="flex-1 rounded-lg bg-zinc-900 px-3 py-2 text-sm text-white outline-none ring-1 ring-zinc-800"
-          >
-            {STATUSES.map(s => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
-          {(yearFilter || statusFilter) && (
+          {yearFilter && (
             <button
-              onClick={() => { setYearFilter(""); setStatusFilter(""); }}
+              onClick={() => setYearFilter("")}
               className="rounded-lg bg-zinc-800 px-3 py-2 text-sm text-zinc-400 hover:text-white"
             >
               ✕
@@ -171,15 +142,12 @@ export default function Home() {
 
             <div className="mt-2 divide-y divide-zinc-900">
               {filtered.map((p, i) => (
-                <div key={`${p.number}-${i}`} className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    <span className="w-8 text-sm text-zinc-600">{p.pos}</span>
-                    <div>
-                      <span className="font-medium">{p.name} {p.lastname}</span>
-                      <span className="ml-2 text-sm text-zinc-600">{p.bdate}</span>
-                    </div>
+                <div key={`${p.number}-${i}`} className="flex items-center py-3">
+                  <span className="w-8 text-sm text-zinc-600">{p.pos}</span>
+                  <div>
+                    <span className="font-medium">{p.name} {p.lastname}</span>
+                    <span className="ml-2 text-sm text-zinc-600">{p.bdate}</span>
                   </div>
-                  <span className={`max-w-48 truncate text-right text-xs ${statusStyle(p.info)}`}>{p.info}</span>
                 </div>
               ))}
               {filtered.length === 0 && (
