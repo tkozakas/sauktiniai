@@ -148,9 +148,12 @@ export default function Home() {
 
             <div className="mt-2 divide-y divide-zinc-900">
               {persons.map((p, i) => (
-                <div key={`${p.pos}-${i}`} className="grid grid-cols-[3rem_1fr_4rem] gap-2 items-center py-3">
+                <div key={`${p.pos}-${i}`} className="grid grid-cols-[3rem_1fr_4rem] gap-2 items-start py-3">
                   <span className="text-sm text-zinc-600">{p.pos}</span>
-                  <span className="font-medium truncate">{p.name} {p.lastname}</span>
+                  <div className="min-w-0">
+                    <span className="font-medium">{p.name} {p.lastname}</span>
+                    {p.info && <p className="text-xs text-zinc-500 truncate">{p.info}</p>}
+                  </div>
                   <span className="text-sm text-zinc-600 text-right">{p.bdate}</span>
                 </div>
               ))}
