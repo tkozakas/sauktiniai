@@ -148,11 +148,10 @@ export default function Home() {
 
             <div className="mt-2 divide-y divide-zinc-900">
               {persons.map((p, i) => (
-                <div key={`${p.pos}-${i}`} className="flex items-center py-3">
-                  <span className="w-12 text-sm text-zinc-600">{p.pos}</span>
-                  <span className="font-medium">{p.name} {p.lastname}</span>
-                  <span className="ml-3 text-sm text-zinc-600">{p.bdate}</span>
-                  {p.info && <span className="ml-auto text-xs text-zinc-500">{p.info}</span>}
+                <div key={`${p.pos}-${i}`} className="grid grid-cols-[3rem_1fr_4rem] gap-2 items-center py-3">
+                  <span className="text-sm text-zinc-600">{p.pos}</span>
+                  <span className="font-medium truncate">{p.name} {p.lastname}</span>
+                  <span className="text-sm text-zinc-600 text-right">{p.bdate}</span>
                 </div>
               ))}
               {persons.length === 0 && (
