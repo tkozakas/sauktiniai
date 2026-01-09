@@ -6,7 +6,7 @@ type Person struct {
 	Name       string `json:"name"`
 	Lastname   string `json:"lastname"`
 	Bdate      string `json:"bdate"`
-	Department string `json:"-"`
+	Department string `json:"department"`
 	Info       string `json:"info"`
 }
 
