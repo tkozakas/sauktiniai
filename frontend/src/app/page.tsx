@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { getList, search, getLastUpdated } from "@/lib/api";
 import type { Person } from "@/lib/types";
 
