@@ -88,6 +88,9 @@ func main() {
 		persons := fetchAll(region)
 		fmt.Printf("Region %d: %d records\n", region, len(persons))
 
+		if persons == nil {
+			persons = []Person{}
+		}
 		data, _ := json.Marshal(persons)
 		os.WriteFile(fmt.Sprintf("backend/data/region_%d.json", region), data, 0644)
 	}

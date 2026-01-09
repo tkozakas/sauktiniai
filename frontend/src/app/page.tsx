@@ -156,6 +156,7 @@ export default function Home() {
                   <span className="w-12 text-sm text-zinc-600">{p.pos}</span>
                   <span className="font-medium">{p.name} {p.lastname}</span>
                   <span className="ml-3 text-sm text-zinc-600">{p.bdate}</span>
+                  {p.info && <span className="ml-auto text-xs text-zinc-500">{p.info}</span>}
                 </div>
               ))}
               {filtered.length === 0 && (
