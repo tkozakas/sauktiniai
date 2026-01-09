@@ -17,6 +17,7 @@ export interface ListResponse {
   region: number;
   start: number;
   count: number;
+  total: number;
   persons: Person[];
 }
 

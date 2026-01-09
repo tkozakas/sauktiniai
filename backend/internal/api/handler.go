@@ -47,10 +47,26 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 		limit = 100
 	}
 
+	year := r.URL.Query().Get("year")
+
 	var persons []karys.Person
+	var total int
 
 	if h.client.IsCached(region) {
 		all := h.client.GetCached(region)
+
+		// Filter by year if specified
+		if year != "" {
+			var filtered []karys.Person
+			for _, p := range all {
+				if p.Bdate == year {
+					filtered = append(filtered, p)
+				}
+			}
+			all = filtered
+		}
+
+		total = len(all)
 		end := start + limit
 		if end > len(all) {
 			end = len(all)
@@ -60,12 +76,14 @@ func (h *Handler) GetList(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		persons, _ = h.client.Fetch(region, start, start+limit-1)
+		total = len(persons)
 	}
 
 	json.NewEncoder(w).Encode(map[string]any{
 		"region":  region,
 		"start":   start,
 		"count":   len(persons),
+		"total":   total,
 		"persons": persons,
 	})
 }

@@ -22,6 +22,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
+  const [total, setTotal] = useState(0);
   const [isSearch, setIsSearch] = useState(false);
   const [yearFilter, setYearFilter] = useState("");
   const [lastUpdated, setLastUpdated] = useState("");
@@ -30,13 +31,15 @@ export default function Home() {
     getLastUpdated().then(setLastUpdated);
   }, []);
 
-  const load = async (r: number, p: number) => {
+  const load = async (r: number, p: number, year?: string) => {
     setLoading(true);
     try {
-      const data = await getList(r, p * 100, 100);
+      const data = await getList(r, p * 100, 100, year || undefined);
       setPersons(data.persons || []);
+      setTotal(data.total || 0);
     } catch {
       setPersons([]);
+      setTotal(0);
     }
     setLoading(false);
   };
@@ -62,16 +65,9 @@ export default function Home() {
 
   useEffect(() => {
     if (!isSearch) {
-      load(region, page);
+      load(region, page, yearFilter);
     }
-  }, [region, page, isSearch]);
-
-  const filtered = useMemo(() => {
-    return persons.filter(p => {
-      if (yearFilter && p.bdate !== yearFilter) return false;
-      return true;
-    });
-  }, [persons, yearFilter]);
+  }, [region, page, isSearch, yearFilter]);
 
   const reset = () => {
     setPage(0);
@@ -122,7 +118,7 @@ export default function Home() {
         <div className="mt-4 flex gap-3">
           <select
             value={yearFilter}
-            onChange={e => setYearFilter(e.target.value)}
+            onChange={e => { setYearFilter(e.target.value); setPage(0); }}
             className="flex-1 rounded-lg bg-zinc-900 px-3 py-2 text-sm text-white outline-none ring-1 ring-zinc-800"
           >
             <option value="">Gimimo metai</option>
@@ -147,11 +143,11 @@ export default function Home() {
         ) : (
           <>
             <div className="mt-4 text-sm text-zinc-600">
-              {filtered.length} įrašų
+              {persons.length} iš {total} įrašų
             </div>
 
             <div className="mt-2 divide-y divide-zinc-900">
-              {filtered.map((p, i) => (
+              {persons.map((p, i) => (
                 <div key={`${p.pos}-${i}`} className="flex items-center py-3">
                   <span className="w-12 text-sm text-zinc-600">{p.pos}</span>
                   <span className="font-medium">{p.name} {p.lastname}</span>
@@ -159,12 +155,12 @@ export default function Home() {
                   {p.info && <span className="ml-auto text-xs text-zinc-500">{p.info}</span>}
                 </div>
               ))}
-              {filtered.length === 0 && (
+              {persons.length === 0 && (
                 <div className="py-12 text-center text-zinc-600">Nieko nerasta</div>
               )}
             </div>
 
-            {!isSearch && persons.length > 0 && (
+            {!isSearch && total > 100 && (
               <div className="mt-6 flex items-center justify-center gap-2">
                 <button
                   onClick={() => setPage(p => Math.max(0, p - 1))}
@@ -173,10 +169,10 @@ export default function Home() {
                 >
                   ←
                 </button>
-                <span className="px-4 text-sm text-zinc-500">{page + 1}</span>
+                <span className="px-4 text-sm text-zinc-500">{page + 1} / {Math.ceil(total / 100)}</span>
                 <button
                   onClick={() => setPage(p => p + 1)}
-                  disabled={persons.length < 100}
+                  disabled={(page + 1) * 100 >= total}
                   className="rounded-lg bg-zinc-900 px-3 py-2 text-sm disabled:opacity-30"
                 >
                   →

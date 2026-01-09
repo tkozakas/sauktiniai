@@ -2,8 +2,10 @@ import type { ListResponse, SearchResponse } from "./types";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "";
 
-export const getList = async (region: number, start = 0, limit = 100): Promise<ListResponse> => {
-  const res = await fetch(`${API}/api/list?region=${region}&start=${start}&limit=${limit}`);
+export const getList = async (region: number, start = 0, limit = 100, year?: string): Promise<ListResponse> => {
+  let url = `${API}/api/list?region=${region}&start=${start}&limit=${limit}`;
+  if (year) url += `&year=${year}`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch");
   return res.json();
 };
